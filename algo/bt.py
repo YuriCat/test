@@ -1,4 +1,3 @@
-# https://www.gavo.t.u-tokyo.ac.jp/~mine/japanese/IT/2017/toukei171211.pdf
 
 # プレーヤー数
 N = 3
@@ -8,7 +7,7 @@ M = [
   [ 3, -1,  5],
   [ 2,  5, -1]
 ]
-VG = 1 # 事前分布として与える架空のプレーヤーとの試合数
+VG = 100 # 事前分布として与える架空のプレーヤーとの試合数
 # ゲーム数と勝利数の各チーム合計
 W = [0.0] * N
 G = [0.0] * N
@@ -22,7 +21,7 @@ for i in range(N):
 print(W)
 print(G)
 
-# EMアルゴリズム
+# MM法
 pi = [1.0] * N 
 for i in range(100):
   print(pi)
@@ -32,7 +31,7 @@ for i in range(100):
     for j in range(N):
       if i != j:
         isum += (M[i][j] + M[j][i]) / (pi[i] + pi[j])
-    npi[i] = (W[i] + VG) / isum
+    npi[i] = (W[i] + VG / 2) / isum
   nsum = 0
   for i in range(N):
     nsum += npi[i]
