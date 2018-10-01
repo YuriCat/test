@@ -1,0 +1,1 @@
+g++ -O3 -shared -fPIC -std=c++11 -Ipybind11/include/ -msse4.2 -DPY $(python3-config --cflags --ldflags) pybind.cpp -o pbtest.so
