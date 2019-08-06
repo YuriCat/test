@@ -31,7 +31,7 @@ def update(mu_mu, mu_kappa, sigma_alpha, sigma_beta, samples):
 
 mu_mu, mu_kappa, sigma_alpha, sigma_beta = mu_mu0, mu_kappa0, sigma_alpha0, sigma_beta0
 for i in range(100000):
-  samples = sample(1)
+  samples = sample(100)
   print(samples)
   mu_mu, mu_kappa, sigma_alpha, sigma_beta = update(mu_mu, mu_kappa, sigma_alpha, sigma_beta, samples)
   mu_mean, sigma_mean = mu_mu, (sigma_beta / (sigma_alpha - 1)) ** 0.5

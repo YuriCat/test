@@ -3,8 +3,8 @@
 import numpy as np
 from scipy.stats import pearsonr
 
-N = 4096 # 元データの次元
-K = 256 # ハッシュ値のビット数
+N = 128 # 元データの次元
+K = 4096 # ハッシュ値のビット数
 
 R = np.random.rand(K, N) * 2 - 1
 #A = np.random.randn(N)
@@ -45,6 +45,7 @@ for i in range(1000):
   x.append(hamming)
   y.append(l1_norm)
 
+print(np.corrcoef([x, y])[1][0])
 r, p = pearsonr(x, y)
 print(r, p)
 
