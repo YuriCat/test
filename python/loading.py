@@ -1,4 +1,4 @@
-import time, pickle
+import time, pickle, copy
 import numpy as np
 
 N = 10000
@@ -10,6 +10,8 @@ ls = ' '.join(map(str, l))
 divl = [al.reshape(N, K)[i] for i in range(N)]
 lbin = al.dumps()
 lbins = [al.reshape(N, K)[i].dumps() for i in range(N)]
+lbins2 = [al.reshape(N, K)[i].dumps() for i in range(N)]
+assert lbins[0] is not lbins2[0]
 print(len(lbins))
 
 #print(ls)
@@ -44,11 +46,11 @@ print(np.array(divl).sum())
 
 from functools import lru_cache
 
-@lru_cache(maxsize=10000)
+@lru_cache(maxsize=100000)
 def load_index(i):
     return pickle.loads(lbins[i])
 
-for i in range(4):
+for i in range(3):
     t = time.time()
     lst = []
     for i in range(N):
@@ -56,14 +58,23 @@ for i in range(4):
     print(np.array(lst).shape)
     print(time.time() - t)
 
-@lru_cache(maxsize=10000)
+@lru_cache(maxsize=100000)
 def load_bin(lb):
     return pickle.loads(lb)
 
-for i in range(4):
+for i in range(3):
     t = time.time()
     lst = []
     for lb in lbins:
+        lst.append(load_bin(lb))
+    print(np.array(lst).shape)
+    print(time.time() - t)
+    print(np.array(lst).sum())
+
+for i in range(2):
+    t = time.time()
+    lst = []
+    for lb in lbins2:
         lst.append(load_bin(lb))
     print(np.array(lst).shape)
     print(time.time() - t)
