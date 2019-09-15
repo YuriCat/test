@@ -20,6 +20,8 @@ print(o.size(), h.size())
 o, h = lstm(x)
 print(type(o), type(h))
 print(o.size(), h[0].size(), h[1].size())
+print(h[0][-1])
+print(o[-1])
 
 o, h = lstm(x, h)
 print(type(o), type(h))
