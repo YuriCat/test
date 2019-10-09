@@ -29,7 +29,7 @@ class ConvLSTMCell(nn.Module):
         combined = torch.cat([input_tensor, h_cur], dim=1)  # concatenate along channel axis
 
         combined_conv = self.conv(combined)
-        cc_i, cc_f, cc_o, cc_g = torch.split(combined_conv, self.hidden_dim, dim=1) 
+        cc_i, cc_f, cc_o, cc_g = torch.split(combined_conv, self.hidden_dim, dim=1)
         i = torch.sigmoid(cc_i)
         f = torch.sigmoid(cc_f)
         o = torch.sigmoid(cc_o)
@@ -47,14 +47,13 @@ class ConvLSTMCell(nn.Module):
         )
 
 class DRC(nn.Module):
-    def __init__(self, d, n, input_dim, hidden_dim, kernel_size, bias):
+    def __init__(self, num_layers, input_dim, hidden_dim, kernel_size, bias):
         super().__init__()
 
-        self.d = d
-        self.n = d
+        self.num_layers = num_layers
 
         blocks = []
-        for _ in range(self.d):
+        for _ in range(self.num_layers):
             blocks.append(ConvLSTMCell(
                 input_dim=input_dim,
                 hidden_dim=hidden_dim,
@@ -63,15 +62,14 @@ class DRC(nn.Module):
             )
         self.blocks = nn.ModuleList(blocks)
 
-    def forward(self, x, hidden):
-        hs = [hidden[0][:,i] for i in range(self.d)]
-        cs = [hidden[1][:,i] for i in range(self.d)]
-        for _ in range(self.n):
+    def forward(self, x, hidden, num_repeats):
+        hs = [hidden[0][:,i] for i in range(self.num_layers)]
+        cs = [hidden[1][:,i] for i in range(self.num_layers)]
+        for _ in range(num_repeats):
             for i, block in enumerate(self.blocks):
-                h, c = block(x, (hs[i], cs[i]))
-                hs[i], cs[i] = h, c
+                hs[i], cs[i] = block(x, (hs[i], cs[i]))
 
-        return h, (torch.stack(hs, dim=1), torch.stack(cs, dim=1))
+        return h[-1], (torch.stack(hs, dim=1), torch.stack(cs, dim=1))
 
     def init_hidden(self, input_size, batch_size):
         hs, cs = [], []
@@ -79,14 +77,14 @@ class DRC(nn.Module):
             h, c = block.init_hidden(input_size, batch_size)
             hs.append(h)
             cs.append(c)
-        
+
         return torch.stack(hs, dim=1), torch.stack(cs, dim=1)
 
 
-net = DRC(3, 3, 8, 16, (3, 3), True)
+net = DRC(num_layers=3, input_dim=8, hidden_dim=16, kernel_size=(3, 3), bias=True)
 x = torch.randn(5, 8, 4, 4)
 h = net.init_hidden((4, 4), 5)
 
-y, h = net(x, h)
+y, h = net(x, h, num_repeats=3)
 
 print(y.size(), h[0].size(), h[1].size())
