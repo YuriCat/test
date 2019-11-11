@@ -14,19 +14,32 @@ class PickledConnection:
         while size > 0:
             chunk = self.conn.recv(size)
             n = len(chunk)
-            print(size, n)
             buf.write(chunk)
             size -= n
         return buf
 
     def recv(self):
         buf = self._recv(4)
-        size, _ = struct.unpack("!i", buf.getvalue())
-        return pickle.loads(self._recv(size))
+        size, = struct.unpack("!i", buf.getvalue())
+        buf = self._recv(size)
+        return pickle.loads(buf.getvalue())
+
+    def _send(self, buf):
+        size = len(buf)
+        while size > 0:
+            n = self.conn.send(buf)
+            size -= n
+            buf = buf[n:]
 
     def send(self, msg):
-        print('send ', msg)
-        self.conn.send(pickle.dumps(msg))
+        buf = pickle.dumps(msg)
+        n = len(buf)
+        header = struct.pack("!i", n)
+        if n > 16384: chunks = [header, buf]
+        elif n > 0: chunks = [header + buf]
+        else: chunks = [header]
+        for chunk in chunks:
+            self._send(chunk)
 
 class ConnectionStarter:
     def __init__(self, run_target, args):
@@ -50,11 +63,11 @@ class ConnectionStarter:
 def server_target(args, conn, index):
     # 受け入れ側処理
     while True:
-        #msg = conn.recv()
-        #cnt = int(msg) + 1
-        #print('server %d counter %d' % (index, cnt))
+        msg = conn.recv()
+        cnt = int(msg) + 1
+        print('server %d counter %d' % (index, cnt))
         time.sleep(1)
-        #conn.send(cnt)
+        conn.send(cnt)
 
 def client_target(args, conn, index):
     # リクエスト側処理
@@ -78,7 +91,7 @@ def open_socket_connection():
 
 def request_starter():
     # リクエスト処理
-    for i in range(1):
+    for i in range(4):
         conn = open_socket_connection()
         conn = PickledConnection(conn)
         print('client connected!')
