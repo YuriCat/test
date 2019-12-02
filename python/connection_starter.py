@@ -13,9 +13,8 @@ class PickledConnection:
         buf = io.BytesIO()
         while size > 0:
             chunk = self.conn.recv(size)
-            n = len(chunk)
+            size -= len(chunk)
             buf.write(chunk)
-            size -= n
         return buf
 
     def recv(self):
@@ -42,7 +41,7 @@ class PickledConnection:
             self._send(chunk)
 
 class ConnectionStarter:
-    def __init__(self, run_target, args):
+    def __init__(self, run_target, args=None):
         self.run_target = run_target
         self.args = args
 
@@ -55,7 +54,7 @@ class ConnectionStarter:
             conn, _ = server_sock.accept()
             conn = PickledConnection(conn)
             print('server connected!')
-            mp.Process(target=self.run_target, args=(self.args, conn, i), daemon=True).start()
+            mp.Process(target=self.run_target, args=(self.args, conn, i)).start()
 
         server_sock.close()
 
