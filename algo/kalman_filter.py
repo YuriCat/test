@@ -5,7 +5,8 @@
 import numpy as np
 
 def model(ys):
-    m = 1.111
+    #m = 1.111
+    m = 2
     if len(ys) == 0:
         return 0
     if len(ys) == 1:
