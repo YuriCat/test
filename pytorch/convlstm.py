@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 
 class ConvLSTMCell(nn.Module):
-
     def __init__(self, input_dim, hidden_dim, kernel_size, bias):
         super().__init__()
 
@@ -49,7 +48,6 @@ class ConvLSTMCell(nn.Module):
 class DRC(nn.Module):
     def __init__(self, num_layers, input_dim, hidden_dim, kernel_size, bias):
         super().__init__()
-
         self.num_layers = num_layers
 
         blocks = []
@@ -63,6 +61,9 @@ class DRC(nn.Module):
         self.blocks = nn.ModuleList(blocks)
 
     def forward(self, x, hidden, num_repeats):
+        if hidden is None:
+            hidden = self.init_hidden(x.shape[2:], x.shape[0])
+
         hs = [hidden[0][:,i] for i in range(self.num_layers)]
         cs = [hidden[1][:,i] for i in range(self.num_layers)]
         for _ in range(num_repeats):
@@ -86,5 +87,6 @@ x = torch.randn(5, 8, 4, 4)
 h = net.init_hidden((4, 4), 5)
 
 y, h = net(x, h, num_repeats=3)
-
+print(y.size(), h[0].size(), h[1].size())
+y, h = net(x, h, num_repeats=10)
 print(y.size(), h[0].size(), h[1].size())
