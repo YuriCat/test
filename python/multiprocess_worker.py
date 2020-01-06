@@ -18,7 +18,7 @@ def hoge(conn):
             ret_list.append(collatz(n))
         conn.send((ret_list, len(ret_list)))
 
-class MultiProccessWorkers:
+class MultiProcessWorkers:
     def __init__(self, func, send_generator, num, postprocess=None, buf_len=512, num_receivers=1):
         self.send_generator = send_generator
         self.postprocess = postprocess
