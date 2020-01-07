@@ -28,7 +28,7 @@ class MultiProccessWorkers:
         self.send_cnt = {}
         self.shutdown_flag = False
         self.lock = threading.Lock()
-        self.output_queue = queue.Queue()
+        self.output_queue = queue.Queue(maxsize=8)
 
         for _ in range(num):
             conn0, conn1 = multiprocessing.Pipe(duplex=True)
@@ -66,7 +66,7 @@ class MultiProccessWorkers:
         print('finished sender')
 
     def _receiver(self, index):
-        print('start receiver')
+        print('start receiver %d' % index)
         conns = [conn for i, conn in enumerate(self.conns) if i % self.num_receivers == index]
         while not self.shutdown_flag:
             tmp_conns = multiprocessing.connection.wait(conns)
@@ -74,11 +74,64 @@ class MultiProccessWorkers:
                 data, cnt = conn.recv()
                 if self.postprocess is not None:
                     data = self.postprocess(data)
-                self.output_queue.put(data)
-                self.lock.acquire()
-                self.send_cnt[conn] -= cnt
-                self.lock.release()
-        print('finished receiver')
+                while not self.shutdown_flag:
+                    try:
+                        self.output_queue.put(data, timeout=0.3)
+                        self.lock.acquire()
+                        self.send_cnt[conn] -= cnt
+                        self.lock.release()
+                        break
+                    except queue.Full:
+                        pass
+        print('finished receiver %d' % index)
+
+
+class MultiThreadWorkers:
+    def __init__(self, func, send_generator, num, postprocess=None, num_receivers=1):
+        self.send_generator = send_generator
+        self.postprocess = postprocess
+        self.num_receivers = num_receivers
+        self.conns = []
+        self.send_cnt = {}
+        self.shutdown_flag = False
+        self.lock = threading.Lock()
+        self.output_queue = queue.Queue(maxsize=8)
+
+        class LocalConnection:
+            def __init__(self, parent):
+                self.parent = parent
+            def send(self, recv_data):
+                data, _ = recv_data
+                if self.parent.postprocess is not None:
+                    data = self.parent.postprocess(data)
+                while not self.parent.shutdown_flag:
+                    try:
+                        self.parent.output_queue.put(data, timeout=0.3)
+                        break
+                    except queue.Full:
+                        pass
+            def recv(self):
+                self.parent.lock.acquire()
+                data = next(self.parent.send_generator)
+                self.parent.lock.release()
+                return data
+
+        for _ in range(num):
+            conn = LocalConnection(self)
+            threading.Thread(target=func, args=(conn,)).start()
+
+    def __del__(self):
+        self.shutdown()
+
+    def shutdown(self):
+        self.shutdown_flag = True
+
+    def recv(self):
+        return self.output_queue.get()
+
+    def _worker(self, index):
+        print('start worker %d' % index)
+        print('finished worker %d' % index)
 
 
 def sender():
@@ -89,11 +142,18 @@ def sender():
         yield i
         i += 1
 
+def fuga(n_list):
+    if len(n_list) < 256:
+        return None
+    ret_list = []
+    for n in n_list:
+        ret_list.append(collatz(n))
+    return ret_list
 
-mpw = MultiProccessWorkers(hoge, sender(), 4, postprocess=lambda x:x.count(True), num_receivers=4)
+#ws = MultiProccessWorkers(hoge, sender(), 4, postprocess=lambda x:x.count(True), num_receivers=4)
+ws = MultiThreadWorkers(hoge, sender(), 4, postprocess=lambda x:x.count(True))
 
 while True:
-    data = mpw.recv()
+    data = ws.recv()
     print(data)
-
 
