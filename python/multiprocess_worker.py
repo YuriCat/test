@@ -25,9 +25,7 @@ class MultiProccessWorkers:
         self.postprocess = postprocess
         self.buffer_length = buffer_length
         self.num_receivers = num_receivers
-        self.worker_process = []
         self.conns = []
-        self.opponent_conns = []
         self.send_cnt = {}
         self.shutdown_flag = False
         self.lock = threading.Lock()
@@ -35,9 +33,9 @@ class MultiProccessWorkers:
 
         for i in range(num):
             conn0, conn1 = multiprocessing.Pipe(duplex=True)
-            self.worker_process.append(multiprocessing.Process(target=func, args=(conn1, i)))
+            multiprocessing.Process(target=func, args=(conn1, i)).start()
+            conn1.close()
             self.conns.append(conn0)
-            self.opponent_conns.append(conn1)
             self.send_cnt[conn0] = 0
 
     def __del__(self):
@@ -50,10 +48,6 @@ class MultiProccessWorkers:
         return self.output_queue.get()
 
     def start(self):
-        for i, p in enumerate(self.worker_process):
-            p.start()
-            self.opponent_conns[i].close()
-        self.opponent_conns = None
         threading.Thread(target=self._sender).start()
         for i in range(self.num_receivers):
             threading.Thread(target=self._receiver, args=(i,)).start()
@@ -148,13 +142,6 @@ def sender():
         yield i
         i += 1
 
-def fuga(n_list):
-    if len(n_list) < 256:
-        return None
-    ret_list = []
-    for n in n_list:
-        ret_list.append(collatz(n))
-    return ret_list
 
 ws = MultiProccessWorkers(hoge, sender(), 4, postprocess=lambda x:x.count(True), num_receivers=4)
 #ws = MultiThreadWorkers(hoge, sender(), 4, postprocess=lambda x:x.count(True))
