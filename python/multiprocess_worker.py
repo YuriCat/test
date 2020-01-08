@@ -10,7 +10,8 @@ def collatz(n):
             n = 3 * n + 1
     return True
 
-def hoge(conn):
+def hoge(conn, index):
+    print('worker %d' % index)
     while True:
         ret_list = []
         for _ in range(256):
@@ -19,27 +20,25 @@ def hoge(conn):
         conn.send((ret_list, len(ret_list)))
 
 class MultiProccessWorkers:
-    def __init__(self, func, send_generator, num, postprocess=None, buf_len=512, num_receivers=1):
+    def __init__(self, func, send_generator, num, postprocess=None, buffer_length=512, num_receivers=1):
         self.send_generator = send_generator
         self.postprocess = postprocess
-        self.buf_len = buf_len
+        self.buffer_length = buffer_length
         self.num_receivers = num_receivers
+        self.worker_process = []
         self.conns = []
+        self.opponent_conns = []
         self.send_cnt = {}
         self.shutdown_flag = False
         self.lock = threading.Lock()
         self.output_queue = queue.Queue(maxsize=8)
 
-        for _ in range(num):
+        for i in range(num):
             conn0, conn1 = multiprocessing.Pipe(duplex=True)
-            multiprocessing.Process(target=func, args=(conn1,)).start()
-            conn1.close()
+            self.worker_process.append(multiprocessing.Process(target=func, args=(conn1, i)))
             self.conns.append(conn0)
+            self.opponent_conns.append(conn1)
             self.send_cnt[conn0] = 0
-
-        threading.Thread(target=self._sender).start()
-        for i in range(self.num_receivers):
-            threading.Thread(target=self._receiver, args=(i,)).start()
 
     def __del__(self):
         self.shutdown()
@@ -50,12 +49,21 @@ class MultiProccessWorkers:
     def recv(self):
         return self.output_queue.get()
 
+    def start(self):
+        for i, p in enumerate(self.worker_process):
+            p.start()
+            self.opponent_conns[i].close()
+        self.opponent_conns = None
+        threading.Thread(target=self._sender).start()
+        for i in range(self.num_receivers):
+            threading.Thread(target=self._receiver, args=(i,)).start()
+
     def _sender(self):
         print('start sender')
         while not self.shutdown_flag:
             total_send_cnt = 0
             for conn, cnt in self.send_cnt.items():
-                if cnt < self.buf_len:
+                if cnt < self.buffer_length:
                     conn.send(next(self.send_generator))
                     self.lock.acquire()
                     self.send_cnt[conn] += 1
@@ -87,16 +95,27 @@ class MultiProccessWorkers:
 
 
 class MultiThreadWorkers:
-    def __init__(self, func, send_generator, num, postprocess=None, num_receivers=1):
+    def __init__(self, func, send_generator, num, postprocess=None):
+        self.func = func
         self.send_generator = send_generator
         self.postprocess = postprocess
-        self.num_receivers = num_receivers
+        self.num = num
         self.conns = []
         self.send_cnt = {}
         self.shutdown_flag = False
         self.lock = threading.Lock()
         self.output_queue = queue.Queue(maxsize=8)
 
+    def __del__(self):
+        self.shutdown()
+
+    def shutdown(self):
+        self.shutdown_flag = True
+
+    def recv(self):
+        return self.output_queue.get()
+
+    def start(self):
         class LocalConnection:
             def __init__(self, parent):
                 self.parent = parent
@@ -116,22 +135,9 @@ class MultiThreadWorkers:
                 self.parent.lock.release()
                 return data
 
-        for _ in range(num):
+        for i in range(self.num):
             conn = LocalConnection(self)
-            threading.Thread(target=func, args=(conn,)).start()
-
-    def __del__(self):
-        self.shutdown()
-
-    def shutdown(self):
-        self.shutdown_flag = True
-
-    def recv(self):
-        return self.output_queue.get()
-
-    def _worker(self, index):
-        print('start worker %d' % index)
-        print('finished worker %d' % index)
+            threading.Thread(target=self.func, args=(conn, i)).start()
 
 
 def sender():
@@ -150,8 +156,10 @@ def fuga(n_list):
         ret_list.append(collatz(n))
     return ret_list
 
-#ws = MultiProccessWorkers(hoge, sender(), 4, postprocess=lambda x:x.count(True), num_receivers=4)
-ws = MultiThreadWorkers(hoge, sender(), 4, postprocess=lambda x:x.count(True))
+ws = MultiProccessWorkers(hoge, sender(), 4, postprocess=lambda x:x.count(True), num_receivers=4)
+#ws = MultiThreadWorkers(hoge, sender(), 4, postprocess=lambda x:x.count(True))
+
+ws.start()
 
 while True:
     data = ws.recv()
