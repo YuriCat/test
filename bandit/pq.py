@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #p = np.array([0.1, 0.2, 0.7])
-p = np.array([0.001, 0.009, 0.99])
+#p = np.array([0.001, 0.009, 0.99])
 #p = np.array([0.3, 0.3, 0.4])
-#p = np.array([0.7, 0.2, 0.1])
+p = np.array([0.7, 0.2, 0.1])
 #p = np.array([0.99, 0.009, 0.001])
 print(np.sum(p))
 
@@ -153,7 +153,7 @@ class PriorThompson(Thompson):
         if self.n.sum() == N_PRIOR:
             return np.random.choice(np.arange(len(p)), p=prior)
         prior /= np.max(prior)
-        for _ in range(8):
+        for _ in range(16):
             a1 = super().bandit()
             r = np.random.random(2)
             if r[0] < prior[a1]:
@@ -181,7 +181,30 @@ class SoftPriorThompson(BanditBase):
         self.q_est[action] += reward
         self.q2_est[action] += reward ** 2
 
-def test(Algo, steps):
+class Softmax(BanditBase):
+    def bandit(self):
+        tau = self.n.sum() ** 0.5
+        x = np.exp(self.mean() * tau)
+        return np.random.choice(list(range(len(self.p))), p=x / x.sum())
+
+class PriorSoftmax(BanditBase):
+    def __init__(self, p, v):
+        super().__init__(p, v)
+
+    def bandit(self):
+        tau = self.n.sum() ** 0.5
+        x = np.exp(self.mean() * tau) * self.p
+        return np.random.choice(list(range(len(self.p))), p=x / x.sum())
+
+def test(Algo, real, steps):
+    # realを設定
+    p_rejection = (p / p.max()) ** 1#2
+    while True:
+        real = np.random.random(len(p))
+        if np.random.random() < p_rejection[np.argmax(real)]:
+            break
+
+    # 順番入れ替え
     idxmap = np.random.permutation(np.arange(len(p)))
     var = Variable(real[idxmap])
     algo = Algo(p[idxmap], v)
@@ -195,31 +218,43 @@ def test(Algo, steps):
     return rewards
 
 def mtest_(args):
-    Algo, idx, n, steps = args
+    Algo, reals, idx, npro, steps = args
     np.random.seed(idx*1234567)
     result = np.zeros(steps)
-    for _ in range(n):
-        result += test(Algo, steps)
+    for real in reals[idx::npro]:
+        result += test(Algo, real, steps)
     return result
 
-def mtest(Algo, steps=256):
-    n = 8192
+def mtest(Algo, reals, steps=256):
     import multiprocessing as mp
     with mp.Pool(process) as p:
-        results = p.map(mtest_, [(Algo, i, n//process, steps) for i in range(process)])
+        results = p.map(mtest_, [(Algo, reals, i, process, steps) for i in range(process)])
 
     mean_results = np.stack(results).sum(axis=0) / n
     print(mean_results)
     return mean_results
 
+n = 1024 # 試行回数
 
-plt.plot(mtest(UCB1), label='ucb1')
-#plt.plot(mtest(PriorUCB1), label='ucb1-prior')
+def make_real():
+    p_rejection = p / p.max()
+    while True:
+        real = np.random.random(len(p))
+        if np.random.random() < p_rejection[np.argmax(real)]:
+            return real
+
+reals = [make_real() for _ in range(n)]
+
+#plt.plot(mtest(UCB1), label='ucb1')
+plt.plot(mtest(PriorUCB1, reals), label='ucb1-prior')
 #plt.plot(mtest(PUCB), label='pucb')
-plt.plot(mtest(PriorPUCB), label='pucb-prior')
-plt.plot(mtest(Thompson), label='thompson')
-plt.plot(mtest(PriorThompson), label='thompson-prior')
-#plt.plot(mtest(BiasedThompson), label='bthompson')
+plt.plot(mtest(PriorPUCB, reals), label='pucb-prior')
+#plt.plot(mtest(Thompson), label='thompson')
+plt.plot(mtest(PriorThompson, reals), label='thompson-prior')
+#plt.plot(mtest(SoftPriorThompson), label='bthompson')
+#plt.plot(mtest(Softmax), label='softmax')
+plt.plot(mtest(PriorSoftmax, reals), label='softmax-prior')
+
 #plt.plot(mtest(UCBRoot), label='ucbroot')
 plt.legend()
 plt.ylim(0, 1)
