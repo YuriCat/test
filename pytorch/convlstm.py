@@ -70,7 +70,7 @@ class DRC(nn.Module):
             for i, block in enumerate(self.blocks):
                 hs[i], cs[i] = block(x, (hs[i], cs[i]))
 
-        return h[-1], (torch.stack(hs, dim=1), torch.stack(cs, dim=1))
+        return hs[-1], (torch.stack(hs, dim=1), torch.stack(cs, dim=1))
 
     def init_hidden(self, input_size, batch_size):
         hs, cs = [], []
