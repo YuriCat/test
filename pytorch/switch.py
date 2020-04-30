@@ -36,17 +36,19 @@ print(net(x, xid))
 
 # 速度比較
 
-sfc = SwitchingLinear(1000, 1000, 1000)
-fc = torch.nn.Linear(1000 * 1000, 1000)
+num_classes = 100
 
-x_np = np.random.randn(1000, 1000)
+sfc = SwitchingLinear(num_classes, 1000, 1000)
+fc = torch.nn.Linear(num_classes * 1000, 1000)
+
+x_np = np.random.randn(num_classes, 1000)
 x = torch.FloatTensor(x_np)
-xid = torch.LongTensor(np.arange(1000))
+xid = torch.LongTensor(np.arange(num_classes))
 
-bx_np = np.zeros((1000, 1000 * 1000))
-for i in range(1000):
+bx_np = np.zeros((num_classes, num_classes * 1000))
+for i in range(num_classes):
     bx_np[i, 1000 * i: 1000 * (i + 1)] = x_np[i]
-bx = torch.FloatTensor(bx_np)
+bx = torch.FloatTensor(bx_np).contiguous()
 
 
 import time
