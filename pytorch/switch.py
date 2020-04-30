@@ -21,6 +21,7 @@ class SwitchingLinear(torch.nn.Module):
     def forward(self, input, index):
         weight = self.weight[index]
         return torch.bmm(weight, input.unsqueeze(-1)).squeeze(-1)
+        #return torch.mv(weight.permute(1, 0, 2).reshape(self.out_features, -1), input.view(-1)).view(-1, self.out_features)
 
 
 net = SwitchingLinear(3, 1, 2)
@@ -31,3 +32,31 @@ xid = torch.LongTensor([0, 1, 2])
 
 print(x)
 print(net(x, xid))
+
+
+# 速度比較
+
+sfc = SwitchingLinear(1000, 1000, 1000)
+fc = torch.nn.Linear(1000 * 1000, 1000)
+
+x_np = np.random.randn(1000, 1000)
+x = torch.FloatTensor(x_np)
+xid = torch.LongTensor(np.arange(1000))
+
+bx_np = np.zeros((1000, 1000 * 1000))
+for i in range(1000):
+    bx_np[i, 1000 * i: 1000 * (i + 1)] = x_np[i]
+bx = torch.FloatTensor(bx_np)
+
+
+import time
+
+print(x.size())
+t = time.time()
+sfc(x, xid)
+print('sfc', time.time() - t)
+
+print(bx.size())
+t = time.time()
+fc(bx)
+print('fc', time.time() - t)
