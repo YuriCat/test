@@ -21,6 +21,7 @@ class Model(torch.nn.Module):
         h = h.view(h.size(0), -1)
         return self.fc(h)
 
+
 model = Model()
 model.eval()
 model.embedding.train()
@@ -28,10 +29,11 @@ model.embedding.train()
 optim = optim.Adam(lr=1e-2, params=model.embedding.parameters())
 print(list(model.parameters()))
 
-x = np.random.randint(7, size=(16, 2, 1))
-y = np.random.random((16, 1))
 
 for i in range(1000):
+    x = np.random.randint(7, size=(16, 2, 1))
+    y = np.random.random((16, 1))
+
     o = model.forward(torch.from_numpy(x))
     loss = (o - torch.from_numpy(y)).pow(2).sum()
 
