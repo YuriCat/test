@@ -154,12 +154,13 @@ class Conductor:
                 break
 
 
-c = Conductor(num_workers=3)
+if __name__ == '__main__':
+    c = Conductor(num_workers=3)
 
-try:
-    c.hello()
-    for _ in range(30):
-        c.step()
-    c.wait()
-finally:
-    c.goodbye()
+    try:
+        c.hello()
+        for _ in range(30):
+            c.step()
+        c.wait()
+    finally:
+        c.goodbye()
