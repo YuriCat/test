@@ -19,7 +19,7 @@ class PickledConnection:
 
     def recv(self):
         buf = self._recv(4)
-        size, = struct.unpack("!i", buf.getvalue())
+        size = struct.unpack("!i", buf.getvalue())
         buf = self._recv(size)
         return pickle.loads(buf.getvalue())
 
