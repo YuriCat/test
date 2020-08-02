@@ -7,8 +7,7 @@ Proof.
   apply iff_refl.
 Qed.
 
-Theorem MP:
-  forall (P Q : Prop), (P -> Q) -> P -> Q.
+Theorem MP: forall (P Q : Prop), (P -> Q) -> P -> Q.
 
 Proof.
   intros ab b c.
