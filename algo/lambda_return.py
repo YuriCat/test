@@ -19,9 +19,9 @@ print(lambda_return(b)[:10])
 
 # 即時報酬ありの場合
 
-r = [0.1, 0, 0.2, 0.4]
+r = [0.1, 0, 0.2, 0.4, 0, 0]
 gamma = 0.9
-bootstrap_value = 0.2 / (1 - gamma)
+bootstrap_value = sum(r) / len(r) / (1 - gamma)
 
 def compute_return(l):
     if len(l) == 1:
@@ -43,9 +43,20 @@ def lambda_return_with_gamma(l, bv):
         ret = l[0] + ll[0] * gamma
         return [ret * (1 - lmbda) + ll[0] * lmbda] + ll
 
-print(lambda_return_with_gamma(r, bootstrap_value))
-print(sum(lambda_return_with_gamma(r, bootstrap_value)))
-print(lambda_return(compute_return(r)))
+def compute_return_of_ir(l, bv):
+    if len(l) == 0:
+        return [bv]
+    else:
+        ll = compute_return_of_ir(l[1:], bv)
+        return [l[0] + ll[0] * gamma] + ll
+
+a = lambda_return_with_gamma(r, bootstrap_value)
+print(a)
+print(sum(a) / len(a))
+
+b = lambda_return(compute_return_of_ir(r, bootstrap_value) + [bootstrap_value] * 100)[:5]
+print(b)
+print(sum(b) / len(b))
 
 print(lambda_return_with_gamma(r + [0] * 100, bootstrap_value)[:5])
 print(lambda_return(compute_return(r + [0] * 100))[:5])
