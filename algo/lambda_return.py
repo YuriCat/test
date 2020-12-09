@@ -54,10 +54,10 @@ a = lambda_return_with_gamma(r, bootstrap_value)
 print(a)
 print(sum(a) / len(a))
 
-b = lambda_return(compute_return_of_ir(r, bootstrap_value) + [bootstrap_value] * 100)[:5]
+b = lambda_return(compute_return_of_ir(r, bootstrap_value))[:len(r)+1]
 print(b)
 print(sum(b) / len(b))
 
-print(lambda_return_with_gamma(r + [0] * 100, bootstrap_value)[:5])
-print(lambda_return(compute_return(r + [0] * 100))[:5])
+print(lambda_return_with_gamma(r + [0] * 100, bootstrap_value)[:len(r)+1])
+print(lambda_return(compute_return(r + [0] * 100))[:len(r)+1])
 
