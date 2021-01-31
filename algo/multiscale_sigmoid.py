@@ -16,3 +16,7 @@ import matplotlib.pyplot as plt
 
 plt.scatter(xs, ys)
 plt.show()
+
+
+plt.scatter(x, v.sum(-1))
+plt.show()
