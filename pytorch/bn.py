@@ -19,12 +19,20 @@ class A(nn.Module):
         return self.fc2(h)
 
 batch = np.random.random((4, 4)).astype(np.float32)
+dummy_batch = np.ones((4, 4)).astype(np.float32) * -100
 model = A()
 
 optim = optim.SGD(model.parameters(), lr=0)
 
 model.train()
 for i in range(1000):
+    #o = model.forward(torch.from_numpy(batch))
+    #print(batch)
+    #print(dummy_batch)
+    with torch.no_grad():
+        model.eval()
+        model.forward(torch.from_numpy(dummy_batch))
+        model.train()
     o = model.forward(torch.from_numpy(batch))
     loss = (o ** 2).sum()
 
@@ -40,5 +48,5 @@ for i in range(1000):
         with torch.no_grad():
             o = model.forward(torch.from_numpy(batch))
         print('eval ', o.numpy().reshape([-1]))
-        #print('mean', model.bn._buffers['running_mean'], 'var', model.bn._buffers['running_var'])
+        print('mean', model.bn._buffers['running_mean'], 'var', model.bn._buffers['running_var'])
         model.train()
