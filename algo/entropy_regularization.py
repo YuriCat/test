@@ -12,3 +12,15 @@ for i in range(1, 20):
     v = er(p)
 
     print(p, v)
+
+
+from matplotlib import pyplot as plt
+
+x = [0.9 ** i for i in range(100)]
+y = [1 / (1 + 2 ** (-2 / x[i])) for i in range(100)]
+
+print(x)
+print(y)
+
+plt.scatter(x, y)
+plt.show()
