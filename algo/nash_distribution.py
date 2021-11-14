@@ -20,7 +20,7 @@ b_ub = [0] * 3
 bounds = [(None, None)] + [(0, None)] * 3  # 決定変数の下限、上限
 
 from scipy.optimize import linprog
-res = linprog(c, A_eq=A_eq, b_eq=b_eq,  A_ub=A_ub, b_ub=b_ub, bounds=bounds)
+res = linprog(c, A_eq=A_eq, b_eq=b_eq, A_ub=A_ub, b_ub=b_ub, bounds=bounds)
 print(res)
 
 
@@ -49,5 +49,19 @@ b_ub = [0] * 6
 bounds = [(None, None)] + [(0, None)] * 6  # 決定変数の下限、上限
 
 from scipy.optimize import linprog
-res = linprog(c, A_eq=A_eq, b_eq=b_eq,  A_ub=A_ub, b_ub=b_ub, bounds=bounds)
+res = linprog(c, A_eq=A_eq, b_eq=b_eq, A_ub=A_ub, b_ub=b_ub, bounds=bounds)
 print(res)
+
+# 一意性の確認
+tbounds = [(res.x[0], res.x[0])] + bounds[1:]
+
+for i in range(6):
+    tc = [0] * (1 + 6)
+    tc[i + 1] = 1
+    res_min = linprog(tc, A_eq=A_eq, b_eq=b_eq, A_ub=A_ub, b_ub=b_ub, bounds=tbounds)
+
+    tc[i + 1] = -1
+    res_max = linprog(tc, A_eq=A_eq, b_eq=b_eq, A_ub=A_ub, b_ub=b_ub, bounds=tbounds)
+
+    print(res_min.x[i + 1], res_max.x[i + 1])
+
