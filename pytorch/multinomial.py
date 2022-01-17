@@ -26,3 +26,10 @@ for _ in range(10000):
     counts[index] += 1
 
 print(counts)
+
+probmat = torch.FloatTensor([[0.3, 0.7], [0.1, 0.9]])
+
+print(probmat.multinomial(num_samples=1, replacement=True))
+
+d = dist.Categorical(probs=probmat)
+print(d.sample())
