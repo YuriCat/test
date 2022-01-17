@@ -12,3 +12,17 @@ for _ in range(10000):
     counts[index] += 1
 
 print(counts)
+
+import torch.distributions as dist
+d = dist.Categorical(probs=prob)
+
+for _ in range(5):
+    index = d.sample([1])
+    print(index)
+
+counts = [0, 0, 0]
+for _ in range(10000):
+    index = d.sample([1])
+    counts[index] += 1
+
+print(counts)
