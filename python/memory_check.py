@@ -14,3 +14,10 @@ print(mem.used)
 # メモリ空き容量を取得 
 print(mem.available)
 #[結果] 3743653888
+
+import time
+
+t = time.time()
+for _ in range(100000):
+    mem = psutil.virtual_memory()
+print(time.time() - t)
