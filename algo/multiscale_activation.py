@@ -30,3 +30,6 @@ for i in range(a.shape[1]):
 for i in range(a.shape[1]):
    plt.scatter(x, z[:,i])
 plt.show()
+
+plt.scatter(z[:,0], z[:,2])
+plt.show()
