@@ -9,10 +9,10 @@ def mstanh(x, a):
     return 2 * sigmoid(x / a) - 1
 
 def msinvsigm(x, a):
-    return 2 * sigmoid(-a / x)
+    return 2 * sigmoid(-a / (x + 1e-4))
 
 def msinvexp(x, a):
-    return np.exp(-a / x)
+    return np.exp(-a / (x + 1e-6))
 
 x = np.arange(0, 32, 0.1).reshape((-1, 1))
 a = np.array([[1, 2, 4, 8]])
