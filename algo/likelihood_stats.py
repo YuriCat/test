@@ -4,7 +4,7 @@
 import numpy as np
 
 
-A = 10
+A = 30
 N = 200000
 base = np.log(A)
 
@@ -18,6 +18,13 @@ likelihood_sum = 0
 for _ in range(N):
     policy = np.random.dirichlet([1 / A] * A).astype(np.float64)
     likelihood_sum += np.log(policy[0])
+
+print(base + likelihood_sum / N)
+
+likelihood_sum = 0
+for _ in range(N):
+    policy = np.random.dirichlet([1 / A / A] * A).astype(np.float64)
+    likelihood_sum += (policy * np.log(policy)).sum()
 
 print(base + likelihood_sum / N)
 
