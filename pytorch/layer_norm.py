@@ -26,3 +26,7 @@ opt.step()
 print(net.__dict__)
 
 print(net(x))
+
+
+net2 = nn.LayerNorm([2, 2, 2], elementwise_affine=False)
+print(net2(x.view(-1, 2, 2)))
