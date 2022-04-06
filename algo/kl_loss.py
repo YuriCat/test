@@ -32,10 +32,19 @@ x = torch.tensor(x_, requires_grad=True)
 p = F.log_softmax(x, -1)
 
 ex_kl_loss = 0
-for _ in range(100000):
+for _ in range(40000):
     index = torch.exp(q).multinomial(num_samples=1, replacement=True)
     rho = torch.clamp(torch.exp(p_[index]) / torch.exp(q[index]), 0, 1e8)
     ex_kl_loss += (q[index] - p_[index]) * rho * -p[index]
 
 ex_kl_loss.backward()
-print(x.grad / 100000)
+print(x.grad / 40000)
+
+x = torch.tensor(x_, requires_grad=True)
+p = F.log_softmax(x, -1)
+
+inv_kl_div = F.kl_div(p, torch.exp(q), reduction='sum')
+print(inv_kl_div)
+
+inv_kl_div.backward()
+print(x.grad)
