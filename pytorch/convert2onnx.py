@@ -9,7 +9,8 @@ class A(nn.Module):
         super().__init__()
         self.fc1 = nn.Linear(4, 4)
         self.fc2 = nn.Linear(4, 4)
-        self.bn = nn.BatchNorm1d(4, eps=1)
+        self.bn = nn.BatchNorm1d(4)
+        self.conv = nn.Conv2d(1, 1, 1)
         self.fca = nn.Linear(4, 1)
         self.fcb = nn.Linear(4, 1)
 
@@ -18,6 +19,9 @@ class A(nn.Module):
         h = self.fc1(a) + self.fc2(b)
         h = self.bn(h)
         h = h[:, :4]
+        h = h.view(-1, 1, 2, 2)
+        h = self.conv(h)
+        h = h.view(-1, 4)
         h = h.view(*h.size()[:1], *h.size()[1:])
         return self.fca(h), self.fcb(h)
 
