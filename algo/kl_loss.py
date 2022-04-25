@@ -12,12 +12,16 @@ q = F.log_softmax(torch.randn(8), -1)
 print(p)
 print(q)
 
+print('### Reversed KL Loss ###')
+
+print('full')
 kl_div = F.kl_div(q, torch.exp(p), reduction='sum')
 print(kl_div)
 
 kl_div.backward()
 print(x.grad)
 
+print('divided')
 x = torch.tensor(x_, requires_grad=True)
 p = F.log_softmax(x, -1)
 
@@ -28,6 +32,7 @@ for index in range(len(x)):
 divided_kl_loss.backward()
 print(x.grad)
 
+print('expected')
 x = torch.tensor(x_, requires_grad=True)
 p = F.log_softmax(x, -1)
 
@@ -43,8 +48,52 @@ print(x.grad / 40000)
 x = torch.tensor(x_, requires_grad=True)
 p = F.log_softmax(x, -1)
 
-inv_kl_div = F.kl_div(p, torch.exp(q), reduction='sum')
-print(inv_kl_div)
+print('### Normal KL Loss ###')
 
-inv_kl_div.backward()
+print('full')
+x = torch.tensor(x_, requires_grad=True)
+p = F.log_softmax(x, -1)
+
+kl_div = F.kl_div(p, torch.exp(q), reduction='sum')
+print(kl_div)
+
+kl_div.backward()
 print(x.grad)
+
+print('divided')
+x = torch.tensor(x_, requires_grad=True)
+p = F.log_softmax(x, -1)
+
+divided_kl_loss = 0
+for index in range(len(x)):
+    divided_kl_loss += (torch.exp(p_[index]) - torch.exp(q[index])) * x[index]
+
+divided_kl_loss.backward()
+print(x.grad)
+
+print('expected')
+x = torch.tensor(x_, requires_grad=True)
+p = F.log_softmax(x, -1)
+
+ex_kl_loss = 0
+for _ in range(40000):
+    index = torch.exp(q).multinomial(num_samples=1, replacement=True)
+    rho = torch.clamp(torch.exp(p_[index]) / torch.exp(q[index]), 0, 1e8)
+    ex_kl_loss += (rho - 1) * x[index]
+
+ex_kl_loss.backward()
+print(x.grad / 40000)
+
+print('expected-p')
+x = torch.tensor(x_, requires_grad=True)
+p = F.log_softmax(x, -1)
+
+ex_kl_loss_p = 0
+for _ in range(40000):
+    index = torch.exp(q).multinomial(num_samples=1, replacement=True)
+    rho = torch.clamp(torch.exp(p_[index]) / torch.exp(q[index]), 0, 1e8)
+    ex_kl_loss_p += (rho - 1) * p[index]
+
+ex_kl_loss_p.backward()
+print(x.grad / 40000)
+
