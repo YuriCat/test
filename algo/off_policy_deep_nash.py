@@ -5,6 +5,7 @@ R = [
     [ 1, -1,  0],
 ]
 
+import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,6 +14,8 @@ logit = torch.randn(1, 3, requires_grad=True)
 #logit = torch.randn(2, 3, requires_grad=True)
 logit_reg = logit.detach().clone()
 pi_history = []
+
+replay_buffer = []
 
 for i in range(300000):
     logit_ = logit.detach()
@@ -24,11 +27,17 @@ for i in range(300000):
     reward = R[actions[0]][actions[1]]
     targets = torch.FloatTensor([reward, -reward]).unsqueeze(1)
 
+    replay_buffer.append((pi, actions, targets))
+    replay_buffer = replay_buffer[-10000:]
+    mu, actions, targets = random.choice(replay_buffer)
+
     log_pi_ratio_reg = F.log_softmax(logit_, -1) - F.log_softmax(logit_reg, -1)
-    selected_b_prob = pi.gather(-1, actions)
+    selected_b_prob = mu.gather(-1, actions)
+    selected_t_prob = pi.gather(-1, actions)
+    rho = (selected_t_prob / selected_b_prob).prod(0, keepdim=True)
     eta = 1
 
-    advantages = -eta * log_pi_ratio_reg + F.one_hot(actions, 3).squeeze(1) / selected_b_prob * targets
+    advantages = -eta * log_pi_ratio_reg + F.one_hot(actions, 3).squeeze(1) / selected_b_prob * rho * targets
 
     clip = 1e4
     loss = -F.log_softmax(logit, -1) * torch.clamp(advantages, -clip, clip)
