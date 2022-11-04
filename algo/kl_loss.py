@@ -9,7 +9,9 @@ p = F.log_softmax(x, -1)
 p_ = p.detach()
 q = F.log_softmax(torch.randn(8), -1)
 
+print('target log-policy')
 print(p)
+print('behaviour log-policy')
 print(q)
 
 print('### Reversed KL Loss ###')
