@@ -1,7 +1,7 @@
 
 R = [
-    [ 0,  1, -1],
-    [-1,  0,  1],
+    [ 0,  2, -1],
+    [-2,  0,  1],
     [ 1, -1,  0],
 ]
 
@@ -13,7 +13,7 @@ logit = torch.randn(1, 3, requires_grad=True)
 logit_reg = logit.detach().clone()
 pi_history = []
 
-for i in range(500000):
+for i in range(300000):
     logit_ = logit
     if logit_.size(0) == 1:
         logit_ = logit_.repeat(2, 1)
@@ -27,7 +27,7 @@ for i in range(500000):
     loss = -F.log_softmax(logit_, -1).gather(-1, actions) * advantages
 
     loss.sum().backward()
-    lr = 3e-3 /(1+i/50000)
+    lr = 1e-3
     logit.data -= logit.grad * lr
     logit.grad.zero_()
 
