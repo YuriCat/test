@@ -5,15 +5,18 @@ R = [
     [ 1, -1,  0],
 ]
 
+T = 300000
+
+import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 logit = torch.randn(1, 3, requires_grad=True)
-logit_reg = logit.detach().clone()
+logit_regs = [torch.randn(1, 3).detach()] * 31 + [logit.detach().clone()]
 pi_history = []
 
-for i in range(300000):
+for i in range(T):
     logit_ = logit
     if logit_.size(0) == 1:
         logit_ = logit_.repeat(2, 1)
@@ -25,6 +28,7 @@ for i in range(300000):
 
     advantages = targets
     loss = -F.log_softmax(logit_, -1).gather(-1, actions) * advantages
+    loss += 0.1 * F.kl_div(F.log_softmax(logit_, -1), F.softmax(logit_regs[-random.choice([1, 2, 3, 5, 8, 13, 21])], -1), reduction='sum')
 
     loss.sum().backward()
     lr = 1e-3
@@ -32,8 +36,9 @@ for i in range(300000):
     logit.grad.zero_()
 
     if i % 1000 == 0:
-        logit_reg = logit.detach().clone()
-        pi_reg = F.softmax(logit_reg, -1)[0]
+        logit_reg_ = logit.detach().clone()
+        logit_regs = logit_regs[1:] + [logit_reg_]
+        pi_reg = F.softmax(logit_reg_, -1)[0]
         print(pi_reg)
         pi_history.append(pi_reg.numpy())
 
