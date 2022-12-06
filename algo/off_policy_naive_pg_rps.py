@@ -5,8 +5,8 @@ R = [
     [ 1, -1,  0],
 ]
 
-B = 100000
-T = 1000000
+B = 30000
+T = 300000
 
 import random
 import torch
@@ -23,7 +23,7 @@ for _ in range(B):
     actions = torch.LongTensor([pi_.multinomial(num_samples=1, replacement=True) for pi_ in pi]).unsqueeze(-1)
     reward = R[actions[0]][actions[1]]
     targets = torch.FloatTensor([reward, -reward]).unsqueeze(1)   
-    replay_buffer.append((pi, actions, targets))
+    replay_buffer.append((pi.gather(-1, actions), actions, targets))
 
 
 for i in range(T):
