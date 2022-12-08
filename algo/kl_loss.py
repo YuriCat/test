@@ -73,7 +73,7 @@ for index in range(len(x)):
 divided_kl_loss.backward()
 print(x.grad)
 
-print('expected')
+print('expected-raw')
 x = torch.tensor(x_, requires_grad=True)
 p = F.log_softmax(x, -1)
 
@@ -86,7 +86,7 @@ for _ in range(40000):
 ex_kl_loss.backward()
 print(x.grad / 40000)
 
-print('expected-p')
+print('expected')
 x = torch.tensor(x_, requires_grad=True)
 p = F.log_softmax(x, -1)
 
